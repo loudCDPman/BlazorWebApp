@@ -1,0 +1,76 @@
+﻿@inject HttpClient Http
+@using WebApplication2.Shared
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+@using Newtonsoft.Json
+@inject SaveItem Notifier
+@page "/Login"
+
+<h3>Login</h3>
+
+
+<EditForm Model="@TokenRequests" OnSubmit="@HandleSubmit">
+    <div>User name <InputText class="material-input" id="name" @bind-Value="@TokenRequests.email" /></div>
+    <div>Password <InputText class="material-input" id="pw" @bind-Value="@TokenRequests.Userpw" /></div>
+    <button type="submit">Submit</button>
+</EditForm>
+
+<dialog closeandreturn id="closeandreturn" open="@loggedin" class="rounded" style="border-top-style">
+    <button class="btn-outline-primary" @onclick="closeloggedin">Close and return</button>
+</dialog>
+
+<dialog failedlogin id="togglefailed" open="@failedlogin" class="rounded" style="border-top-style">
+    <p>Failed to login</p>
+    <button class="btn-outline-primary" @onclick="togglefailed">Close</button>
+</dialog>
+
+
+@code {
+        LoginModel login;
+        TokenRequest TokenRequests = new TokenRequest();
+    private bool loggedin = false;
+    private bool failedlogin = false;
+
+    private async Task closeloggedin()
+    {
+        loggedin = true;
+        await Notifier.Update("elapsedCount", loggedin);
+        NavigationManager.NavigateTo("");
+    }
+
+    private async Task togglefailed()
+    {
+        failedlogin = !failedlogin;
+    }
+    private async Task HandleSubmit()
+    {
+        var login = new Loginlogic();
+        var condition = await login.HandleSubmit2(Http, JS, TokenRequests);
+        if (condition) {
+            loggedin = true;
+        }
+        else
+        {
+            failedlogin = true;
+        }
+    }
+    private async Task HandleSubmit2()
+    {
+        ////TokenRequests.UserId = new Guid();
+        //Console.WriteLine("HandleSubmit");
+        //var blam = await Http.PostAsJsonAsync<TokenRequest>("Account/token", TokenRequests);
+        //if (blam.IsSuccessStatusCode)
+        //{
+        //    var content = await blam.Content.ReadAsStringAsync();
+        //    var tokens = JsonConvert.DeserializeObject<Token>(content);
+        //    await JS.InvokeVoidAsync("setLocalStorage", new object[] { "Session", tokens.token });
+        //    await JS.InvokeVoidAsync("setLocalStorage", new object[] { "Sessionrefresh", tokens.RefreshToken });
+        //    await JS.InvokeVoidAsync("setLocalStorage", new object[] { "UserName", TokenRequests.email });
+        //    loggedin = true;
+        //}
+        //else
+        //{
+        //    failedlogin = true;
+        //}
+    }
+}

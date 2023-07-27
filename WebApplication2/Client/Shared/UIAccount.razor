@@ -1,0 +1,202 @@
+﻿@inject IJSRuntime  JS
+@inject HttpClient Http
+@inject SaveItem Notifier
+@inject NavigationManager NavigationManager
+@using Newtonsoft.Json
+@using WebApplication2.Shared
+@using BlazorMetro
+
+<p>Account</p>
+
+@if (!loggedin)
+{
+    <button class="alert-primary" @onclick="togglelogin">Open</button>
+}
+else
+{
+<div style="position:relative;">
+    <button id="accountbutton" class="account-button" @onclick="() => { show = !show; }">
+        <p>@@</p>
+    </button>
+    @if (show)
+    {
+        <div class="dialog" id="AccountDialog" style="top:auto; bottom: -520%;">
+            <p>Loged in as:</p>
+            <h2>@usernameloggedin</h2>
+            <p>
+                <button class="" @onclick="gotosettingspage">Settings</button>
+            </p>
+            <p>
+                <button class="sync-button" @onclick="toggleSyncSceen"><span>&#x21bb;</span>Sync</button>
+            </p>
+            <p>
+                <button class="sync-button" @onclick="Signout"><span>&#x21bb;</span>Sign out</button>
+            </p>
+        </div>
+    }
+
+</div>
+}
+
+<div class="float-md-right">
+    <dialog loginitem id="logitem" open="@islogitemopen" class="rounded" style="top-blo">
+        <p>Account</p>
+        <NavLink class="nav-link" href="Login" @onclick="togglelogin">Sign in</NavLink>>
+        <button class="btn-outline-primary" @onclick="togglelogin">Close</button>
+    </dialog>
+</div>
+
+
+<div class="float-md-right">
+    <dialog loginitem id="SyncScreen" open="@SyncScreenshow" class="rounded">
+        <p>Sync Appointments</p>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Address</th>
+                    <th>Appointment date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var app in customerapp)
+                {
+                    <tr>
+                        <td>@app.Name</td>
+                        <td>@app.Address</td>
+                        <td>@app.AppointmentDate</td>
+                        <td><button class="material-button" @onclick="(() => gotoCustomerpage(app.Id.ToString()))" id="@app.Id"><span>&#x2193;</span>Start</button></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <BmButton DisplayText="Get Appointments" OnClick="GetAppointments"/> 
+        @*<button class="material-button" @onclick="GetAppointments"><span>&#x2193;</span>Get Appointments</button>*@
+        <span>                                     </span>
+        <button class="btn-outline-primary" @onclick="toggleSyncSceen">Close</button>
+    </dialog>
+</div>
+
+
+@code {
+    private string imageSource;
+    private bool islogitemopen = false;
+    private bool SyncScreenshow = false;
+    public bool loggedin = false;
+    private List<CustomerDataModel> customerapp = new List<CustomerDataModel>();
+
+    private bool show = false;
+
+    private string usernameloggedin = string.Empty;
+    private LoginModel Login = default;
+
+    private (string key, bool value) lastNotification;
+
+    protected override void OnInitialized()
+    {
+        CheckLogedin();
+        Notifier.Notify += OnNotify;
+    }
+    protected void gotosettingspage()
+    {
+        NavigationManager.NavigateTo("/SettingsMainPage");
+    }
+    protected void gotoCustomerpage(string buttonId)
+    {
+        Notifier.data = customerapp[0];
+        //Notifier.data = customerapp.Where(x => x.Id == e.);
+        NavigationManager.NavigateTo("UserDetails");
+        SyncScreenshow = false;
+    }
+
+    public async Task OnNotify(string key, bool value)
+    {
+        await InvokeAsync(() =>
+        {
+            lastNotification = (key, value);
+            CheckLogedin();
+            loggedin = true;
+            StateHasChanged();
+        });
+    }
+
+    private void togglelogin()
+    {
+        islogitemopen = !islogitemopen;
+    }
+    private void toggleSyncSceen()
+    {
+        SyncScreenshow = !SyncScreenshow;
+    }
+
+    private async Task HandleSubmit()
+    {
+        Console.WriteLine("HandleSubmit");
+        await Http.PostAsJsonAsync<LoginModel>("AccountController", Login);
+    }
+
+    private async Task GetAppointments()
+    {
+        Console.WriteLine("GetAppointments");
+        Loginlogic loginlogic = new Loginlogic();
+        customerapp = await loginlogic.HandleSubmit34(Http, JS);
+        //customerapp = await Http.GetFromJsonAsync<List<CustomerDataModel>>("CustomerData/GetAppointments");
+        Console.WriteLine(customerapp);
+        await JS.InvokeVoidAsync("setLocalStorage", new object[] { "app", JsonConvert.SerializeObject(customerapp) });
+    }
+
+    private async Task CheckLogedin()
+    {
+        var token = await JS.InvokeAsync<string>("getFromLocalStorage", "Session");
+        if (!string.IsNullOrEmpty(token))
+        {
+            usernameloggedin = await JS.InvokeAsync<string>("getFromLocalStorage", "UserName");
+            Console.WriteLine(usernameloggedin);
+            loggedin = true;
+        }
+        StateHasChanged();
+    }
+
+    private async Task Signout()
+    {
+        Loginlogic loginlogic = new Loginlogic();
+        var haslogedout = await loginlogic.HandleSubmitDelete(Http, JS, "Account/signout");
+
+        await JS.InvokeVoidAsync("removeLocalStorage", "UserName");
+        await JS.InvokeVoidAsync("removeLocalStorage", "Session");
+        await JS.InvokeVoidAsync("removeLocalStorage", "Sessionrefresh");
+        loggedin = false;
+        StateHasChanged();
+    }
+
+
+    private bool collapseNavMenu = false;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("addClickOutsideListener", DotNetObjectReference.Create(this));
+        }
+    }
+
+    [JSInvokable("CloseDialog")]
+    public void CloseDialog()
+    {
+        show = false;
+        StateHasChanged();
+    }
+    [JSInvokable("CheckMethod")]
+    public bool CheckMethod()
+    {
+        return show;
+    }
+
+}

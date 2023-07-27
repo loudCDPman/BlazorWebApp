@@ -1,0 +1,166 @@
+﻿@inject IJSRuntime  JS
+@inject HttpClient Http
+@inject SaveItem Notifier
+@inject NavigationManager NavigationManager
+@using WebApplication2.Shared
+@using Newtonsoft.Json
+
+@page "/UserDetails"
+
+<h3>UserDetails</h3>
+<p>Please enter user details</p>
+
+<EditForm Model="user" OnValidSubmit="HandleSubmit" OnInvalidSubmit="openlogin">
+
+    @*<table class="table">
+            <thead>
+                <tr>
+                    <th>User Id</th>
+                    <th>User Name</th>
+                    <th>User Age</th>
+                    <th>User PostCode</th>
+                    <th>User Income</th>
+                    <th>User House Value</th>
+                    <th>User House Type</th>
+                    <th>User Reason</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>@user.UserId</td>
+                    <td><InputText id="name" @bind-Value="@user.Name" /></td>
+                    <td><InputNumber id="age" @bind-Value="@user.Age" /></td>
+                    <td><InputText id="address" @bind-Value="@user.PostCode" /></td>
+                    <td><InputNumber id="income" @bind-Value="@user.Income" /></td>
+                    <td><InputNumber id="houseValue" @bind-Value="@user.HouseValue" /></td>
+                    <td><InputText id="housertype" @bind-Value="@user.HouseType" /></td>
+                    <td><InputTextArea id="reason" @bind-Value="@user.Reason" /></td>
+                    <td><InputDate id="Movedindate" @bind-Value="@user.DateTimeMovedin"/></td>
+                </tr>
+            </tbody>
+        </table>*@
+
+    <div><label class="layoutinputtext">User Id</label> <label class="layoutinput"> @user.UserId</label></div>
+    <div><label class="layoutinputtext">User Name</label> <InputText id="name" class="layoutinput" @bind-Value="@user.Name" /></div>
+    <div><label class="layoutinputtext">User Age</label> <InputNumber id="age" class="layoutinput" @bind-Value="@user.Age" /></div>
+    <div><label class="layoutinputtext">User PostCode</label> <InputText id="address" class="layoutinput" @bind-Value="@user.PostCode" /></div>
+    <div><label class="layoutinputtext">User Income</label> <InputNumber id="income" class="layoutinput" @bind-Value="@user.Income" /></div>
+    <div><label class="layoutinputtext">User House Value</label> <InputNumber id="houseValue" class="layoutinput" @bind-Value="@user.HouseValue" /></div>
+    <div><label class="layoutinputtext">User House Type</label> <InputText id="housertype" class="layoutinput" @bind-Value="@user.HouseType" /></div>
+    <div><label class="layoutinputtext">User Reason</label> <InputTextArea id="reason" class="layoutinput" @bind-Value="@user.Reason" /></div>
+    <div><label class="layoutinputtext">Moved in date</label><InputDate id="Movedindate" class="layoutinput" @bind-Value="@user.DateTimeMovedin" /></div>
+    <div>
+        <label class="layoutinputtext">Gender</label><InputSelect id="Gender" class="layoutinput" @bind-Value="@user.Geneder">
+            <option value="M">Male</option>
+            <option value="F">Female</option>
+        </InputSelect>
+    </div>
+    <button type="submit">Next</button>
+
+</EditForm>
+<div>
+    <b>player</b>
+    <a id="urllink">download</a>
+</div>
+<dialog Invalid id="InvalidSubmit" open="@InvalidSubmit" class="rounded" style="top-blo">
+    <p>Error with one of the inputs</p>
+    <button class="btn-outline-primary" @onclick="closelogin">Close</button>
+</dialog>
+
+<dialog Invalid id="Submit" open="@returnSubmit" class="rounded" style="top-blo">
+    <p>User data has been synced.</p>
+    <button class="btn-outline-primary" @onclick="closesubmit">Close</button>
+</dialog>
+
+
+@code {
+    private UserForm user = new UserForm();
+
+    private bool InvalidSubmit = false;
+    private bool returnSubmit = false;
+    private void openlogin()
+    {
+        InvalidSubmit = true;
+    }
+    private void closelogin()
+    {
+        InvalidSubmit = false;
+    }
+    private void closesubmit()
+    {
+        returnSubmit = false;
+        gotohomepage();
+    }
+
+    protected override void OnInitialized()
+    {
+        if (Notifier.data != null)
+        {
+            user = new UserForm()
+            {
+                UserId = Notifier.data.Id,
+                Name = Notifier.data.Name,
+                PostCode = Notifier.data.Address,
+                Age = Notifier.data.Age,
+                Income = Notifier.data.Income
+            };
+        }
+        record();
+        base.OnInitialized();
+    }
+
+    private async Task HandleSubmit()
+    {
+        Console.WriteLine("HandleSubmit");
+        //await stoprecord();
+
+        var isonline = await JS.InvokeAsync<bool>("getIsOnline");
+        Console.WriteLine("HandleSubmit33");
+        if (isonline)
+        {
+
+            Loginlogic loginlogic = new Loginlogic();
+            Console.WriteLine("HandleSubmit334");
+            var result = await loginlogic.HandleSubmitPost(Http, JS, "CustomerData/UserData", user);
+
+            Console.WriteLine("HandleSubmit3443");
+   
+            if (result.IsSuccessStatusCode)
+            {
+                returnSubmit = true;
+            }
+            else
+            {
+                InvalidSubmit = true;
+            }
+        }
+        else
+        {
+            Console.WriteLine("HandleSubmit3654");
+            await JS.InvokeVoidAsync("setLocalStorage", new object[] { "UserData", JsonConvert.SerializeObject(user) });
+        }
+        Notifier.CompletedDetails1 = true;
+        //await getrecord();
+    }
+
+    private async Task record()
+    {
+        await JS.InvokeVoidAsync("initAudioRecording");
+    }
+
+    private async Task getrecord()
+    {
+        await JS.InvokeVoidAsync("getMediaRecording");
+        StateHasChanged();
+
+    }
+    private async Task stoprecord()
+    {
+        await JS.InvokeVoidAsync("stopRecording");
+    }
+
+    protected void gotohomepage()
+    {
+        NavigationManager.NavigateTo("UserDetails2");
+    }
+}

@@ -1,0 +1,16 @@
+﻿@inject NavigationManager NavigationManager
+
+@page "/SettingsMainPage"
+
+<h3>SettingsMainPage</h3>
+
+<button class="material-button" @onclick="gotopage"><span>&#x2193;</span>Update Password</button>
+
+@code {
+
+
+    protected void gotopage()
+    {
+        NavigationManager.NavigateTo("/UpdatePassword");
+    }
+}

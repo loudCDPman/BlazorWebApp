@@ -1,0 +1,66 @@
+﻿@page "/customerdata"
+@using WebApplication2.Shared
+@inject HttpClient Http
+
+<h3>CustomerData</h3>
+
+<p>Where you put customer data</p>
+
+@if (customerDatasS == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+
+
+
+<EditForm Model="@customerDatasS" OnSubmit="@HandleSubmit">
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>User Id</th>
+                <th>User Name</th>
+                <th>User Age</th>
+                <th>User Address</th>
+                <th>User Income</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var Cdata in customerDatasS)
+            {
+                <tr>
+
+                    <td>@Cdata.Id</td>
+                    <td><InputText id="name" @bind-Value="@Cdata.Name" /></td>
+                    <td><InputNumber id="age" @bind-Value="@Cdata.Age" /></td>
+                    <td><InputText id="address" @bind-Value="@Cdata.Address" /></td>
+                    <td><InputNumber id="income" @bind-Value="@Cdata.Income" /></td>
+
+                </tr>
+            }
+        </tbody>
+    </table>
+    <button type="submit">Submit</button>
+</EditForm>
+
+
+}
+
+@code {
+    private CustomerDataModel[] customerDatasS = new CustomerDataModel[] {  };
+
+    protected override async Task OnInitializedAsync()
+    {
+        customerDatasS = await Http.GetFromJsonAsync<CustomerDataModel[]>("CustomerData");
+    }
+    private async Task HandleSubmit()
+    {
+        Console.WriteLine("HandleSubmit");
+        await Http.PostAsJsonAsync<CustomerDataModel[]>("CustomerData",customerDatasS);
+    }
+}
+
+
+

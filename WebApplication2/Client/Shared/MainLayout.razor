@@ -1,0 +1,58 @@
+﻿@inherits LayoutComponentBase
+@inject IJSRuntime JS
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+
+    <div class="main">
+        @*<div class="top-row px-4">
+            <a href="http://blazor.net" target="_blank" class="ml-md-auto">About</a>
+        </div>*@
+
+        <div class="top-row px-4">
+            <p style="justify-content: flex-start">
+                <label>&#x1F5A7;</label>
+                @if (isOnline)
+                {
+                    <label>&#x1F7E2;</label>
+                }
+                else
+                {
+                    <label>&#x1F534;</label>
+                }
+            </p>
+            <UIAccount/>
+        </div>
+        @*style="justify-content: flex-start"*@
+        @*@bind-loggedin="Password"*@
+        <div class="content px-4">
+            @Body
+        </div>
+    </div>
+</div>
+
+@code
+{
+    public bool Password = false;
+    public CascadingValue<bool> islogin;
+    public bool isOnline;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckIsOnline();
+     
+    }
+
+
+    private async Task record()
+    {
+        await JS.InvokeVoidAsync("initAudioRecording");
+    }
+    private async Task CheckIsOnline()
+    {
+        isOnline = await JS.InvokeAsync<bool>("getIsOnline");
+    }
+}

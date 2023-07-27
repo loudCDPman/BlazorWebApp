@@ -1,0 +1,20 @@
+﻿body {
+}
+
+.top-blo {
+    height: 1.0rem;
+    width: auto;
+    position:absolute;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.dialog {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    padding: 20px;
+    position: absolute;
+    top: calc(100% + 10px);
+    left: -300%;
+    transform: translateX(-50%);
+}

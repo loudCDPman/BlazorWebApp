@@ -1,0 +1,9 @@
+﻿<button class="material-button" @onclick="OnClick">@DisplayText</button>
+
+@code
+{
+    [Parameter]
+    public string DisplayText { get; set; }
+    [Parameter]
+    public EventCallback OnClick { get; set; }
+}

@@ -1,0 +1,133 @@
+﻿@inject IJSRuntime  JS
+@inject HttpClient Http
+@inject SaveItem Notifier
+@inject NavigationManager NavigationManager
+@using WebApplication2.Shared
+@using Newtonsoft.Json
+
+@page "/UserDetails2"
+
+<h3>UserDetails</h3>
+<p>Please enter user details about Heath</p>
+
+<EditForm Model="user" OnValidSubmit="HandleSubmit" OnInvalidSubmit="openlogin">
+    @*<div><label class="layoutinputtext">User Id</label> <label class="layoutinput"> @user.UserId</label></div>*@
+    <div><label class="layoutinputtext">Do they Smoke</label> <InputCheckbox id="DoSmoke" class="layoutinput" @bind-Value="@user.Smoke" /></div>
+    <div><label class="layoutinputtext">How many Cigretes do they Smoke a week</label> <InputNumber id="SmokeAmount" class="layoutinput" @bind-Value="@user.SmokeAmount" /></div>
+    <div><label class="layoutinputtext">Have they or currently have Cancer</label> <InputCheckbox id="Cancer" class="layoutinput" @bind-Value="@user.Cancer" /></div>
+    <div><label class="layoutinputtext">Type of Cancer</label> <InputText id="CancerType" class="layoutinput" @bind-Value="@user.TypeOfCancer" /></div>
+    <div><label class="layoutinputtext">Any Mental heath problems</label> <InputCheckbox id="MentalHeath" class="layoutinput" @bind-Value="@user.MentalHeath" /></div>
+    <div><label class="layoutinputtext">Mental heath Type</label> <InputText id="MentalHeathType" class="layoutinput" @bind-Value="@user.TypeOfMentalHeath" /></div>
+    <div>
+        <label class="layoutinputtext">Gender</label><InputSelect id="Diabetes" class="layoutinput" @bind-Value="@user.Diabetes">
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+        </InputSelect>
+    </div>
+    <div><label class="layoutinputtext">Any other heath problems</label> <InputTextArea id="Other" class="layoutinput" @bind-Value="@user.Other" /></div>
+
+    <button type="submit">Submit</button>
+
+</EditForm>
+<div>
+    <b>player</b>
+    <a id="urllink">download</a>
+</div>
+<dialog Invalid id="InvalidSubmit" open="@InvalidSubmit" class="rounded" style="top-blo">
+    <p>Error with one of the inputs</p>
+    <button class="btn-outline-primary" @onclick="closelogin">Close</button>
+</dialog>
+
+<dialog Invalid id="Submit" open="@returnSubmit" class="rounded" style="top-blo">
+    <p>User data has been synced.</p>
+    <button class="btn-outline-primary" @onclick="closesubmit">Close</button>
+</dialog>
+
+
+@code {
+    private UserHeathForm user = new UserHeathForm();
+
+    private bool InvalidSubmit = false;
+    private bool returnSubmit = false;
+    private void openlogin()
+    {
+        InvalidSubmit = true;
+    }
+    private void closelogin()
+    {
+        InvalidSubmit = false;
+    }
+    private void closesubmit()
+    {
+        returnSubmit = false;
+        gotohomepage();
+    }
+
+    protected override void OnInitialized()
+    {
+        if (Notifier.data != null)
+        {
+            //user = new UserForm()
+            //{
+            //    UserId = Notifier.data.Id,
+            //    Name = Notifier.data.Name,
+            //    PostCode = Notifier.data.Address,
+            //    Age = Notifier.data.Age,
+            //    Income = Notifier.data.Income
+            //};
+        }
+        record();
+        base.OnInitialized();
+    }
+
+    private async Task HandleSubmit()
+    {
+        Console.WriteLine("HandleSubmit");
+        await stoprecord();
+
+        var isonline = await JS.InvokeAsync<bool>("getIsOnline");
+        if (isonline)
+        {
+            Loginlogic loginlogic = new Loginlogic();
+            var result = await loginlogic.HandleSubmitPost(Http, JS, "CustomerData/UserData2", user);
+
+
+            if (result.IsSuccessStatusCode)
+            {
+                returnSubmit = true;
+            }
+            else
+            {
+                InvalidSubmit = true;
+            }
+        }
+        else
+        {
+
+            await JS.InvokeVoidAsync("setLocalStorage", new object[] { "UserData", JsonConvert.SerializeObject(user) });
+        }
+        Notifier.CompletedDetails2 = true;
+        await getrecord();
+    }
+
+    private async Task record()
+    {
+        await JS.InvokeVoidAsync("initAudioRecording");
+    }
+
+    private async Task getrecord()
+    {
+        await JS.InvokeVoidAsync("getMediaRecording");
+        StateHasChanged();
+
+    }
+    private async Task stoprecord()
+    {
+        await JS.InvokeVoidAsync("stopRecording");
+    }
+
+    protected void gotohomepage()
+    {
+        NavigationManager.NavigateTo("");
+    }
+}

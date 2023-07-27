@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>WebApplication2</title>
+    <base href="/" />
+    <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />
+    <link href="css/app.css" rel="stylesheet" />
+    <link href="WebApplication2.Client.styles.css" rel="stylesheet" />
+    <link href="manifest.json" rel="manifest" />
+    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
+</head>
+
+<body>
+    <div id="app">Loading...</div>
+
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>
+    <script src="_framework/blazor.webassembly.js"></script>
+    <!--service-worker.published-->
+    <!--service-worker.js-->
+    <script>navigator.serviceWorker.register('service-worker.published.js');</script>
+
+    <script>
+        var stream;
+        var fggf;
+        var chucks = [];
+        window.getFromLocalStorage = (key) => {
+            return localStorage.getItem(key);
+        }
+
+        window.setLocalStorage = (key, value) => {
+            localStorage.setItem(key, value);
+        }
+
+        window.removeLocalStorage = (key) => {
+            localStorage.removeItem(key);
+        }
+
+        window.getIsOnline = () => { return navigator.onLine; }
+
+        window.initAudioRecording = async () => {
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            fggf = new MediaRecorder(stream);
+            fggf.start();
+            console.log(fggf);
+
+            //fggf.ondataavailable = (e) => {
+            //    chucks.push(e.data)
+            //    console.log(chucks);
+            //}
+
+            fggf.addEventListener("dataavailable", event => {
+                chucks.push(event.data);
+            });
+
+        }
+
+        window.stopRecording = async () => {
+
+            //stream.getAudioTracks()[0].stop();
+            stream.getAudioTracks().forEach((element) => {
+                element.stop();
+            });
+
+            console.log("hit stop");
+            fggf.stop();
+            console.log("hit stop saved");
+        }
+
+        window.getMediaRecording = async () => {
+
+            console.log("hit reocrd");
+
+            const blo = new Blob(chucks, { type: "audio/webm; codecs=opus" });
+            console.log(blo);
+            const aduiurl = window.URL.createObjectURL(blo);
+            console.log(aduiurl);
+
+
+            var lol = document.getElementById('urllink');
+            lol.href = aduiurl;
+            //lol.download = "recording.wav";
+            //lol.click();
+        }
+
+
+        window.addClickOutsideListener = function (dotNetObject) {
+            document.addEventListener("click", function (event) {
+                var result = dotNetObject.invokeMethodAsync("CheckMethod");
+                console.log(result);
+                if (event.target.id === "AccountDialog" || (event.target.id === "accountbutton" && result)) {
+                    console.log("hgit");
+                    return;
+
+                }
+                dotNetObject.invokeMethodAsync("CloseDialog");
+            });
+        }
+
+
+
+                //window.addEventListener("click", function (event) {
+                //    if (event.target.id === "AccountDialog") {
+                //        console.log(event.target);
+                //        console.log("hit");
+                //        return;
+                //    }
+                //    console.log(event.target);
+                //    console.log(event.target.id);
+                //    console.log("fesf");
+                //    var dialog = document.getElementById("AccountDialog");
+                //    if (dialog.classList.contains("show")) {
+                //        console.log("hity");
+                //        dialog.classList.remove("show");
+                //    }
+                //});
+
+    </script>
+
+</body>
+
+</html>
